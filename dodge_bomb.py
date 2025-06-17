@@ -3,6 +3,7 @@ import random
 import sys
 import pygame as pg
 import time
+import math
 
 
 WIDTH, HEIGHT = 1100, 650
@@ -57,13 +58,36 @@ def check_bound(rct: pg.Rect) -> tuple[bool, bool]:
     if rct.top < 0 or HEIGHT < rct.bottom: # 縦方向の画面外判定
         tate = False
     return yoko, tate  # 横方向，縦方向の画面内判定結果を返す
-    
+
+
+
+def get_kk_img(sum_mv: tuple[int, int], base_img: pg.Surface) -> pg.Surface:
+    direction_map = {
+        (0, 5): 90,     # 上（画面座標の上は dy=-5だけど反転済みで5）
+        (5, 5): 45,
+        (5, 0): 0,
+        (5, -5): -45,
+        (0, -5): -90,
+        (-5, -5): -135,
+        (-5, 0): 180,
+        (-5, 5): 135,  
+    }
+    dx, dy = sum_mv
+    if (dx, dy) == (0, 0):
+        return base_img
+    dx = max(-5, min(5, dx))
+    dy = max(-5, min(5, dy))
+    key = (int(dx / abs(dx)) * 5 if dx != 0 else 0,
+           int(dy / abs(dy)) * 5 if dy != 0 else 0)
+    angle = direction_map.get(key, 0)  # 該当しない場合は右（0度）
+    return pg.transform.rotate(base_img, angle)
 
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("fig/pg_bg.jpg")
-    kk_img = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 0.9)
+    kk_img_base = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 0.9)
+    kk_img = kk_img_base.copy()
     kk_rct = kk_img.get_rect()
     kk_rct.center = 300, 200
     bb_imgs, sbb_accs = init_bb_imgs()
@@ -94,6 +118,11 @@ def main():
             if key_lst[key]:
                 sum_mv[0] += mv[0]
                 sum_mv[1] += mv[1]
+        kk_img = get_kk_img(tuple(sum_mv), kk_img_base)
+        kk_rct = kk_img.get_rect(center=kk_rct.center)  # 回転後の画像でRect更新
+        kk_rct.move_ip(sum_mv)
+        if check_bound(kk_rct) != (True, True):
+            kk_rct.move_ip(-sum_mv[0], -sum_mv[1])
         # if key_lst[pg.K_UP]:
         #     sum_mv[1] -= 5
         # if key_lst[pg.K_DOWN]:
