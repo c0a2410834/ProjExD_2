@@ -16,6 +16,7 @@ DELTA = {  # 移動量辞書
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 blackout = pg.Surface((WIDTH, HEIGHT))
 
+
 def gameover(screen: pg.Surface) -> None:#ゲームオーバー画面
     blackout = pg.Surface((WIDTH, HEIGHT))    
     blackout.set_alpha(150)
